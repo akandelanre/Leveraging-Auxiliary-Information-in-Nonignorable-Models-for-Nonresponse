@@ -451,6 +451,7 @@ ProbVote_Posterior <- function(Model_mat_sub){
 
 ###### 3: Load Data
 Data <- read.csv("CPSData.csv",header=T,row.names = 1)
+#Data <- read.table("CPSData.txt",header=T)
 #Data <- Data %>% sample_frac(0.25)
 #head(Data) #4 variables: state (4 levels), age (4 levels), gender (2 levels), vote (2 levels)
 Data$gender <- Data$gender - 1 #Recode to 0 and 1
