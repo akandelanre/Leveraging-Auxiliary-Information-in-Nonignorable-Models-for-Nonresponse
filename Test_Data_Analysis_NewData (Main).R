@@ -271,6 +271,7 @@ PostPred_NewData <- function(PostParameters,State){
 ProbVote_Posterior <- function(Model_mat_sub){
   VoteBySubgroups <- NULL; SubgroupsByVote = NULL; 
   ProbTurnout_NonRespAll = NULL; ProbTurnout_ItemNonRespVote = NULL
+  ProbTurnout_NonRespAll_ByAge = NULL; ProbTurnout_ItemNonRespVote_ByAge = NULL
   for(j in 1:nrow(Model_mat_sub)){
     PostParameters_j <- Model_mat_sub[j,]
     
@@ -404,6 +405,14 @@ ProbVote_Posterior <- function(Model_mat_sub){
     ProbTurnout_NonRespAll_j <- u1_v1_by_st$x[u1_v1_by_st$vote==1]/u1_by_st$x
     
     
+    
+    u1_v1_by_st_ag <- aggregate(cond_table_with_u$Prob,FUN=sum,
+                             by=list(state=cond_table_with_u$state,age=cond_table_with_u$age,vote=cond_table_with_u$vote))
+    u1_by_st_ag <- aggregate(u1_v1_by_st_ag$x,FUN=sum,
+                          by=list(state=u1_v1_by_st_ag$state,age=u1_v1_by_st_ag$age))
+    ProbTurnout_NonRespAll_ByAge_j <- u1_v1_by_st_ag$x[u1_v1_by_st_ag$vote==1 & u1_v1_by_st_ag$age==1]/u1_by_st_ag$x[u1_by_st_ag$age==1]
+    
+    
     # Finally, posterior predicted turnout among item nonrespondents
     # R_vote given state, age, gender and vote
     ExpGrid_st_ag_gd_vt <- expand.grid(state=(1:4),age=c(1:4),gender=c(0,1),vote=c(0:1))
@@ -434,18 +443,31 @@ ProbVote_Posterior <- function(Model_mat_sub){
     ProbTurnout_ItemNonRespVote_j <- r_vote1_v1_by_st$x[r_vote1_v1_by_st$vote==1]/r_vote1_by_st$x
     
     
+    
+    r_vote1_v1_by_st_ag <- aggregate(cond_table_with_r_vote$Prob,FUN=sum,
+                                  by=list(state=cond_table_with_r_vote$state,age=cond_table_with_r_vote$age,vote=cond_table_with_r_vote$vote))
+    r_vote1_by_st_ag <- aggregate(r_vote1_v1_by_st_ag$x,FUN=sum,
+                               by=list(state=r_vote1_v1_by_st_ag$state,age=r_vote1_v1_by_st_ag$age))
+    ProbTurnout_ItemNonRespVote_ByAge_j <- r_vote1_v1_by_st_ag$x[r_vote1_v1_by_st_ag$vote==1 & r_vote1_v1_by_st_ag$age==1]/r_vote1_by_st_ag$x[r_vote1_by_st_ag$age==1]
+    
+    
     VoteBySubgroups <- cbind(VoteBySubgroups,c(VoteBySubgroups_j)) 
     #use matrix(VoteBySubgroups,ncol=4); colnames(VoteBySubgroups) <- c("FL","GA","NC","SC") to recover order
     SubgroupsByVote <- cbind(SubgroupsByVote,c(SubgroupsByVote_j))
     #use matrix(SubgroupsByVote,ncol=4); colnames(SubgroupsByVote) <- c("FL","GA","NC","SC") to recover order
     ProbTurnout_NonRespAll <- rbind(ProbTurnout_NonRespAll,c(ProbTurnout_NonRespAll_j))
     ProbTurnout_ItemNonRespVote <- rbind(ProbTurnout_ItemNonRespVote,c(ProbTurnout_ItemNonRespVote_j))
+    
+    ProbTurnout_NonRespAll_ByAge <- rbind(ProbTurnout_NonRespAll_ByAge,c(ProbTurnout_NonRespAll_ByAge_j))
+    ProbTurnout_ItemNonRespVote_ByAge <- rbind(ProbTurnout_ItemNonRespVote_ByAge,c(ProbTurnout_ItemNonRespVote_ByAge_j))
   }
   
   return(list(VoteBySubgroups=VoteBySubgroups,
               SubgroupsByVote=SubgroupsByVote,
               ProbTurnout_NonRespAll=ProbTurnout_NonRespAll,
-              ProbTurnout_ItemNonRespVote=ProbTurnout_ItemNonRespVote))
+              ProbTurnout_ItemNonRespVote=ProbTurnout_ItemNonRespVote,
+              ProbTurnout_NonRespAll_ByAge=ProbTurnout_NonRespAll_ByAge,
+              ProbTurnout_ItemNonRespVote_ByAge=ProbTurnout_ItemNonRespVote_ByAge))
 }
 
 
@@ -701,6 +723,8 @@ Results$VoteBySubgroupsSE <- round(matrix(apply(VoteTurnoutPosterior$VoteBySubgr
 Results$SubgroupsByVote <- round(matrix(rowMeans(VoteTurnoutPosterior$SubgroupsByVote),ncol=4),2)
 Results$ProbTurnout_NonRespAll <- VoteTurnoutPosterior$ProbTurnout_NonRespAll
 Results$ProbTurnout_ItemNonRespVote <- VoteTurnoutPosterior$ProbTurnout_ItemNonRespVote
+Results$ProbTurnout_NonRespAll_ByAge <- VoteTurnoutPosterior$ProbTurnout_NonRespAll_ByAge
+Results$ProbTurnout_ItemNonRespVote_ByAge <- VoteTurnoutPosterior$ProbTurnout_ItemNonRespVote_ByAge
 
 colnames(Results$VoteBySubgroups) <- c("FL","GA","NC","SC")
 rownames(Results$VoteBySubgroups) <- c("Full","M","F","<30","30-49","50-69","70+",
@@ -716,6 +740,16 @@ rownames(Results$SubgroupsByVote) <- c("M","F","<30","30-49","50-69","70+",
                                        "<30(F)","30-49(F)","50-69(F)","70+(F)")
 colnames(Results$ProbTurnout_NonRespAll) <- c("FL","GA","NC","SC")
 colnames(Results$ProbTurnout_ItemNonRespVote) <- c("FL","GA","NC","SC")
+
+colnames(Results$ProbTurnout_NonRespAll_ByAge) <- c("FL","GA","NC","SC")
+colnames(Results$ProbTurnout_ItemNonRespVote_ByAge) <- c("FL","GA","NC","SC")
+
+
+round(colMeans(Results$ProbTurnout_ItemNonRespVote_ByAge),4)
+round(colMeans(Results$ProbTurnout_NonRespAll_ByAge),4)
+
+
+
 
 
 xtable(Results$VoteBySubgroups)
@@ -853,7 +887,6 @@ ggplot(PostPredTurnout_Vote, aes(y = Turnout, x = State)) +
   theme_classic() #+
 #geom_hline(yintercept = c(by(PostPredTurnout_Vote$Turnout,PostPredTurnout_Vote$State,median)),lty=2,col="grey50")
 dev.off()
-
 
 
 
